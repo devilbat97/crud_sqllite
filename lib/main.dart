@@ -55,21 +55,15 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
   var d = {'title': 'test1', 'context': 'isi test1'};
+  bool isReady = false;
   List data = [];
   TextEditingController juduls = new TextEditingController();
   TextEditingController isis = new TextEditingController();
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
 
   Future<Database> init() async {
     Directory directory = await getApplicationDocumentsDirectory();
-    print(directory.absolute.path
-        .toString()); //returns a directory which stores permanent files
+//returns a directory which stores permanent files
     final path = join(directory.path, "memos.db"); //create path to database
 
     return await openDatabase(
@@ -93,7 +87,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<int> addItem() async {
     //returns number of items inserted as an integer
-
+    isReady = false;
+    setState(() {});
     final db = await init(); //open database
 
     // await db.transaction((txn) async {
@@ -118,8 +113,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> getListItem() async {
     final db = await init();
     data = await db.rawQuery('SELECT * FROM Memos');
+    isReady = true;
     setState(() {});
-    print(data);
   }
 
   Future<void> updateItem(String id, String isi, String judul) async {
@@ -128,8 +123,8 @@ class _MyHomePageState extends State<MyHomePage> {
     int c = await db.rawUpdate(
         'UPDATE Memos SET title = ?, content = ? WHERE id = ?',
         [judul, isi, int.parse(id)]);
-    setState(() {});
-    print(c);
+    //setState(() {});
+    //print(c);
     getListItem();
     //print(data);
   }
@@ -138,7 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final db = await init();
     int count =
         await db.rawDelete('DELETE FROM Memos WHERE id = ?', [int.parse(id)]);
-    setState(() {});
+    //setState(() {});
     getListItem();
     //print(count);
   }
@@ -148,7 +143,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // set up the button
     Widget okButton = RaisedButton(
       onPressed: () {
-        updateItem(id, isi, judul).then((value) {
+        updateItem(id, isis.text, juduls.text).then((value) {
           Navigator.pop(context);
         });
       },
@@ -267,37 +262,41 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: Container(
-        child: ListView(
-            padding: EdgeInsets.all(10.0),
-            children: getAllList(context) //<Widget>[
-            // for (var i in data)
-            //   Container(
-            //     height: MediaQuery.of(context).size.height * 0.1,
-            //     color: Colors.grey,
-            //     child: Padding(
-            //       padding: EdgeInsets.only(
-            //           left: MediaQuery.of(context).size.width * 0.05,
-            //           top: MediaQuery.of(context).size.height * 0.02,
-            //           right: MediaQuery.of(context).size.width * 0.3),
-            //       child: Column(
-            //         crossAxisAlignment: CrossAxisAlignment.start,
-            //         children: [
-            //           Text(i['title'].toString()),
-            //           Divider(
-            //             color: Colors.white,
-            //             thickness: 2,
-            //           ),
-            //           Text(i['content'].toString()),
-            //           SizedBox(height: 10)
-            //         ],
-            //       ),
-            //     ),
-            //   ),
-            // SizedBox(height: 10),
-            //],
+      body: isReady == false
+          ? new Center(
+              child: CircularProgressIndicator(),
+            )
+          : Container(
+              child: ListView(
+                  padding: EdgeInsets.all(10.0),
+                  children: getAllList(context) //<Widget>[
+                  // for (var i in data)
+                  //   Container(
+                  //     height: MediaQuery.of(context).size.height * 0.1,
+                  //     color: Colors.grey,
+                  //     child: Padding(
+                  //       padding: EdgeInsets.only(
+                  //           left: MediaQuery.of(context).size.width * 0.05,
+                  //           top: MediaQuery.of(context).size.height * 0.02,
+                  //           right: MediaQuery.of(context).size.width * 0.3),
+                  //       child: Column(
+                  //         crossAxisAlignment: CrossAxisAlignment.start,
+                  //         children: [
+                  //           Text(i['title'].toString()),
+                  //           Divider(
+                  //             color: Colors.white,
+                  //             thickness: 2,
+                  //           ),
+                  //           Text(i['content'].toString()),
+                  //           SizedBox(height: 10)
+                  //         ],
+                  //       ),
+                  //     ),
+                  //   ),
+                  // SizedBox(height: 10),
+                  //],
+                  ),
             ),
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: addItem,
         tooltip: 'Increment',
