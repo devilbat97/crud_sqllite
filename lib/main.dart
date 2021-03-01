@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart'; //sqflite package
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart'; //used to join paths
+import 'package:path/path.dart';
 import 'dart:io';
 import 'dart:async';
+import 'package:sqflite/sqflite.dart';
 
 void main() {
   runApp(MyApp());
@@ -16,19 +16,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
-        // This makes the visual density adapt to the platform that you run
-        // the app on. For desktop platforms, the controls will be smaller and
-        // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: MyHomePage(title: 'Flutter Demo Home Page'),
@@ -39,15 +27,6 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -55,16 +34,18 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  var d = {'title': 'test1', 'context': 'isi test1'};
-  bool isReady = false;
+  int _counter = 0;
   List data = [];
-  TextEditingController juduls = new TextEditingController();
-  TextEditingController isis = new TextEditingController();
+
+  @override
+  void initState() {
+    getData();
+    super.initState();
+  }
 
   Future<Database> init() async {
     Directory directory = await getApplicationDocumentsDirectory();
-//returns a directory which stores permanent files
-    final path = join(directory.path, "memos.db"); //create path to database
+    final path = join(directory.path, "latihan.db");
 
     return await openDatabase(
         //open the database or create a database if there isn't any
@@ -78,88 +59,55 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  @override
-  void initState() {
-    //addItem(d);
-    super.initState();
-    getListItem();
-  }
-
-  Future<int> addItem() async {
-    //returns number of items inserted as an integer
-    isReady = false;
-    setState(() {});
-    final db = await init(); //open database
-
-    // await db.transaction((txn) async {
-    //   int id1 = await txn.rawInsert(
-    //       'INSERT INTO Memos(title, content) VALUES("' +
-    //           item['title'] +
-    //           '", "' +
-    //           item['context'] +
-    //           '")');
-    //   print('inserted1: $id1');
-    // });
-    for (int i = 0; i < 5; i++) {
-      await db.transaction((txn) async {
-        int id1 = await txn.rawInsert(
-            'INSERT INTO Memos(title, content) VALUES("test$i", "ini isi test$i")');
-        print('inserted1: $id1');
-      });
-    }
-    getListItem();
-  }
-
-  Future<void> getListItem() async {
+  Future<void> getData() async {
     final db = await init();
-    data = await db.rawQuery('SELECT * FROM Memos');
-    isReady = true;
+    data = await db.rawQuery('Select * from Memos');
     setState(() {});
   }
 
-  Future<void> updateItem(String id, String isi, String judul) async {
+  Future<void> addData(String isi, String judul) async {
     final db = await init();
-    //data = await db.rawQuery('SELECT * FROM Memos');
-    int c = await db.rawUpdate(
-        'UPDATE Memos SET title = ?, content = ? WHERE id = ?',
+    await db.transaction((txn) async {
+      int id2 = await txn.rawInsert(
+          'INSERT INTO Memos(title,content) VALUES(?, ?)', [judul, isi]);
+    });
+    getData();
+  }
+
+  Future<void> updateData(String judul, String isi, String id) async {
+    final db = await init();
+    await db.rawUpdate('UPDATE Memos SET title = ?, content = ? WHERE id = ?',
         [judul, isi, int.parse(id)]);
-    //setState(() {});
-    //print(c);
-    getListItem();
-    //print(data);
+    getData();
   }
 
-  Future<void> deleteItem(String id) async {
+  Future<void> deleteData(String id) async {
     final db = await init();
-    int count =
-        await db.rawDelete('DELETE FROM Memos WHERE id = ?', [int.parse(id)]);
-    //setState(() {});
-    getListItem();
-    //print(count);
+    await db.rawDelete('Delete from Memos where id= ?', [int.parse(id)]);
+    getData();
   }
 
-  void showAlertDialog(
-      BuildContext context, String id, String judul, String isi) {
+  void modalAdd(BuildContext context) {
+    TextEditingController isi = new TextEditingController();
+    TextEditingController judul = new TextEditingController();
     // set up the button
     Widget okButton = RaisedButton(
       onPressed: () {
-        updateItem(id, isis.text, juduls.text).then((value) {
+        addData(isi.text, judul.text).then((ca) {
           Navigator.pop(context);
         });
       },
       child: new Text("Submit"),
     );
-    juduls.text = judul;
-    isis.text = isi;
 
     // set up the AlertDialog
     AlertDialog alert = AlertDialog(
-      title: Text("Edit Memos Ke - $id"),
+      title: Text("Add"),
       content: Container(
-          height: MediaQuery.of(context).size.height * 0.25,
+          height: MediaQuery.of(context).size.height * 0.3,
           child: Column(children: [
             TextField(
-              controller: juduls,
+              controller: judul,
               decoration: InputDecoration(
                   border: const OutlineInputBorder(), hintText: 'Judul'),
             ),
@@ -167,7 +115,7 @@ class _MyHomePageState extends State<MyHomePage> {
               height: MediaQuery.of(context).size.height * 0.02,
             ),
             TextField(
-              controller: isis,
+              controller: isi,
               decoration: InputDecoration(
                   border: const OutlineInputBorder(), hintText: 'Content'),
             ),
@@ -192,12 +140,70 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  List<Widget> getAllList(BuildContext context) {
-    List c = <Widget>[];
-    for (int i = 0; i < data.length; i++) {
-      c.add(
+  void updateModal(
+      BuildContext context, String id, String juduls, String isis) {
+    // set up the button
+    TextEditingController isi = new TextEditingController();
+    TextEditingController judul = new TextEditingController();
+    Widget okButton = RaisedButton(
+      onPressed: () {
+        updateData(judul.text, isi.text, id).then((value) {
+          Navigator.pop(context);
+        });
+      },
+      child: new Text("Submit"),
+    );
+    judul.text = juduls;
+    isi.text = isis;
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text("Edit Memos Ke - $id"),
+      content: Container(
+          height: MediaQuery.of(context).size.height * 0.28,
+          child: Column(children: [
+            TextField(
+              controller: judul,
+              decoration: InputDecoration(
+                  border: const OutlineInputBorder(), hintText: 'Judul'),
+            ),
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.02,
+            ),
+            TextField(
+              controller: isi,
+              decoration: InputDecoration(
+                  border: const OutlineInputBorder(), hintText: 'Content'),
+            ),
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.02,
+            ),
+            Divider(
+              thickness: 5,
+            )
+          ])),
+      actions: [
+        okButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
+  List<Widget> getViewList(BuildContext context) {
+    List<Widget> temp = <Widget>[];
+    //await getData();
+    for (var i in data) {
+      print(i['id'].toString());
+      temp.add(
         Container(
-          height: MediaQuery.of(context).size.height * 0.16,
+          height: MediaQuery.of(context).size.height * 0.2,
           color: Colors.grey,
           child: Padding(
             padding: EdgeInsets.only(
@@ -207,12 +213,12 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(data[i]['title'].toString()),
+                Text(i['title'].toString()),
                 Divider(
                   color: Colors.white,
                   thickness: 2,
                 ),
-                Text(data[i]['content'].toString()),
+                Text(i['content'].toString()),
                 Padding(
                     padding: EdgeInsets.only(
                         left: MediaQuery.of(context).size.width * 0.1),
@@ -220,11 +226,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       children: [
                         RaisedButton(
                           onPressed: () {
-                            showAlertDialog(
-                                context,
-                                data[i]['id'].toString(),
-                                data[i]['title'].toString(),
-                                data[i]['content'].toString());
+                            updateModal(context, i['id'].toString(),
+                                i['title'].toString(), i['content'].toString());
                           },
                           child: new Text("Update"),
                         ),
@@ -232,7 +235,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             width: MediaQuery.of(context).size.width * 0.1),
                         RaisedButton(
                           onPressed: () {
-                            deleteItem(data[i]['id'].toString());
+                            deleteData(i['id'].toString());
                           },
                           child: new Text("Delete"),
                         ),
@@ -243,62 +246,27 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
       );
-      c.add(SizedBox(height: 10));
+      temp.add(SizedBox(height: 10));
     }
-    return c;
+    return temp;
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: isReady == false
-          ? new Center(
-              child: CircularProgressIndicator(),
-            )
-          : Container(
-              child: ListView(
-                  padding: EdgeInsets.all(10.0),
-                  children: getAllList(context) //<Widget>[
-                  // for (var i in data)
-                  //   Container(
-                  //     height: MediaQuery.of(context).size.height * 0.1,
-                  //     color: Colors.grey,
-                  //     child: Padding(
-                  //       padding: EdgeInsets.only(
-                  //           left: MediaQuery.of(context).size.width * 0.05,
-                  //           top: MediaQuery.of(context).size.height * 0.02,
-                  //           right: MediaQuery.of(context).size.width * 0.3),
-                  //       child: Column(
-                  //         crossAxisAlignment: CrossAxisAlignment.start,
-                  //         children: [
-                  //           Text(i['title'].toString()),
-                  //           Divider(
-                  //             color: Colors.white,
-                  //             thickness: 2,
-                  //           ),
-                  //           Text(i['content'].toString()),
-                  //           SizedBox(height: 10)
-                  //         ],
-                  //       ),
-                  //     ),
-                  //   ),
-                  // SizedBox(height: 10),
-                  //],
-                  ),
-            ),
+      body: Container(
+        child: ListView(
+            padding: EdgeInsets.all(10), children: getViewList(context)),
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: addItem,
+        onPressed: () {
+          modalAdd(context);
+        },
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
